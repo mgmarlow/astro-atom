@@ -1,7 +1,7 @@
 {
   "name": "astro-atom",
   "version": "1.0.0",
-  "description": "",
+  "description": "Atom feed generator for Astro",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -12,9 +12,13 @@
     "build": "tsc",
     "prepublishOnly": "pnpm build"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": ["atom", "feed", "xml"],
+  "author": "Graham Marlow",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mgmarlow/astro-atom.git"
+  },
   "packageManager": "pnpm@10.22.0",
   "devDependencies": {
     "typescript": "^5.9.3"
