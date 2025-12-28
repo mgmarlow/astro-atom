@@ -1,43 +1,52 @@
 import { XMLBuilder } from "fast-xml-parser";
+import { compact, joinPath } from "./util.js";
 
+interface Author {
+  name: string;
+  email?: string;
+}
+
+/**
+ * A single Atom feed entry.
+ */
 interface Entry {
+  /** Title of the entry */
   title: string;
+  /** Last updated timestamp for the entry */
   updated: Date;
+  /** Canonical URL linking to the entry */
   link: string;
-  id?: string; // Assumed to be same as link
+  /** Short summary or description of the entry */
   description?: string;
+  /** Full content of the entry (assumed HTML) */
   content?: string;
-  author?: {
-    name: string;
-    email: string;
-  };
+  /** Optional author override for this entry */
+  author?: Author;
 }
 
+/**
+ * Configuration options for generating an Atom feed.
+ */
 interface Options {
+  /** Title of the feed */
   title: string;
+  /**
+   * Base URL used to resolve relative links
+   * @example "https://example.com"
+   */
   base: string;
+  /** Entries included in the feed */
   items: Entry[];
-  outputPath: string; // e.g. feed.xml
+  /**
+   * Output file path for the generated feed.
+   * @example "feed.xml"
+   */
+  outputPath: string;
+  /** Default author for the feed */
+  author: Author;
+  /** Optional description of the feed */
   description?: string;
-  author: {
-    name: string;
-    email?: string;
-  };
 }
-
-const joinPath = (...segments: string[]): string => {
-  const path = segments
-    .join("/")
-    .replace(/\/+/g, "/") // Replace multiple slashes with single
-    .replace(/^(.+):\//, "$1://") // Preserve protocol slashes (http://)
-    .replace(/\/+$/, ""); // Remove trailing slashes
-
-  // Add trailing slash unless it has an extension
-  return /\.[^/.]+$/.test(path) ? path : path + "/";
-};
-
-const compact = (obj: Record<string, any>): Record<string, any> =>
-  Object.fromEntries(Object.entries(obj).filter(([_, value]) => value != null));
 
 export const atom = async (opt: Options): Promise<Response> => {
   const builder = new XMLBuilder({

@@ -12,7 +12,11 @@
     "build": "tsc",
     "prepublishOnly": "pnpm build"
   },
-  "keywords": ["atom", "feed", "xml"],
+  "keywords": [
+    "atom",
+    "feed",
+    "xml"
+  ],
   "author": "Graham Marlow",
   "license": "MIT",
   "repository": {
