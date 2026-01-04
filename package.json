@@ -1,7 +1,7 @@
 {
-  "name": "astro-atom",
+  "name": "validate-feed",
   "version": "1.0.0",
-  "description": "Atom feed generator for Astro",
+  "description": "Validate JSON Feed and convert to XML",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -21,7 +21,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/mgmarlow/astro-atom.git"
+    "url": "https://github.com/mgmarlow/validate-feed.git"
   },
   "packageManager": "pnpm@10.22.0",
   "devDependencies": {
