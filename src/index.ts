@@ -1,109 +1,66 @@
+import { z } from "zod";
 import { XMLBuilder } from "fast-xml-parser";
-import { compact, joinPath } from "./util.js";
+import { compact } from "./util.js";
+import { JsonFeedSchema } from "./feed.js";
 
-interface Author {
-  name: string;
-  email?: string;
-}
+export const validate = (
+  feed: Omit<z.infer<typeof JsonFeedSchema>, "version">,
+) =>
+  JsonFeedSchema.parse({
+    version: "https://jsonfeed.org/version/1.1",
+    ...feed,
+  });
 
-/**
- * A single Atom feed entry.
- */
-interface Entry {
-  /** Title of the entry */
-  title: string;
-  /** Last updated timestamp for the entry */
-  updated: Date;
-  /** Canonical URL linking to the entry */
-  link: string;
-  /** Short summary or description of the entry */
-  description?: string;
-  /** Full content of the entry (assumed HTML) */
-  content?: string;
-  /** Optional author override for this entry */
-  author?: Author;
-}
+export const atom = (
+  feed: Omit<z.infer<typeof JsonFeedSchema>, "version">,
+): string => {
+  const validated = validate(feed);
 
-/**
- * Configuration options for generating an Atom feed.
- */
-interface Options {
-  /** Title of the feed */
-  title: string;
-  /**
-   * Base URL used to resolve relative links
-   * @example "https://example.com"
-   */
-  base: string;
-  /** Entries included in the feed */
-  items: Entry[];
-  /**
-   * Output file path for the generated feed.
-   * @example "feed.xml"
-   */
-  outputPath: string;
-  /** Default author for the feed */
-  author: Author;
-  /** Optional description of the feed */
-  description?: string;
-}
-
-export const atom = async (opt: Options): Promise<Response> => {
   const builder = new XMLBuilder({
     ignoreAttributes: false,
     format: true,
     suppressEmptyNode: true,
+    cdataPropName: "#cdata",
   });
 
   const root: Record<string, any> = {
     "?xml": { "@_version": "1.0", "@_encoding": "UTF-8" },
   };
 
-  const mostRecentItemDate = opt.items
-    ? new Date(Math.max(...opt.items.map((item) => item.updated.getTime())))
-    : new Date();
-
   root.feed = compact({
     "@_xmlns": "http://www.w3.org/2005/Atom",
-    id: joinPath(opt.base),
-    title: opt.title,
-    subtitle: opt.description,
-    author: opt.author,
-    updated: mostRecentItemDate.toISOString(),
+    id: validated.feed_url,
+    title: validated.title,
+    subtitle: validated.description,
+    author: validated.authors,
+    updated: new Date().toISOString(),
     link: {
       "@_rel": "self",
-      "@_href": joinPath(opt.base, opt.outputPath),
+      "@_href": validated.feed_url,
     },
   });
 
-  root.feed.entry = opt.items.map((entry) => {
-    const link = entry.link.startsWith(opt.base)
-      ? entry.link
-      : joinPath(opt.base, entry.link);
-
+  root.feed.entry = feed.items.map((entry) => {
     return compact({
-      id: link,
-      author: entry.author,
+      id: entry.id,
+      author: entry.authors?.map((author) => ({
+        "@_name": author.name,
+        "@_uri": author.url,
+      })),
       title: entry.title,
-      summary: entry.description,
+      summary: entry.summary,
       link: {
-        "@_href": link,
+        "@_href": entry.url || entry.id,
       },
-      updated: entry.updated.toISOString(),
-      content: entry.content
+      updated: entry.date_modified || entry.date_published,
+      content: entry.content_html
         ? {
             "@_type": "html",
-            "#text": entry.content,
+            "#cdata": entry.content_html,
           }
-        : undefined,
+        : entry.content_text,
     });
   });
 
-  const content = builder.build(root);
-
-  return new Response(content, {
-    headers: {
-      "Content-Type": "application/xml",
-    },
-  });
+  return builder.build(root);
 };
